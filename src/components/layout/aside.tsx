@@ -65,7 +65,7 @@ export const Aside = () => {
               <SelectValue></SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="gpt3.5">GPT 2.5-turbo 16k</SelectItem>
+              <SelectItem value="gpt3.5">GPT 3.5-turbo 16k</SelectItem>
             </SelectContent>
           </Select>
           <span className="block text-xs text-muted-foreground italic">
