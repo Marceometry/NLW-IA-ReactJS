@@ -14,7 +14,11 @@ const statusMessages: { [key in Status]: string } = {
   success: 'Sucesso!',
 }
 
-export function VideoInputForm() {
+type Props = {
+  onVideoUploaded: (id: string) => void
+}
+
+export function VideoInputForm({ onVideoUploaded }: Props) {
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [conversionProgress, setConversionProgress] = useState(0)
@@ -49,7 +53,9 @@ export function VideoInputForm() {
 
       setStatus('generating')
       await api.post(`/videos/${videoId}/transcription`, { prompt })
+
       setStatus('success')
+      onVideoUploaded(videoId)
     } catch (error) {
       setStatus('waiting')
       console.error(error)
