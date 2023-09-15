@@ -1,11 +1,24 @@
 import { useMemo, useRef, useState } from 'react'
 import { FileVideo, Upload } from 'lucide-react'
+import { api } from '@/lib/axios'
 import { convertVideoToAudio } from '@/lib/ffmpeg'
 import { Separator, Label, Textarea, Button } from '@/components'
 
+type Status = 'waiting' | 'converting' | 'uploading' | 'generating' | 'success'
+
+const statusMessages: { [key in Status]: string } = {
+  waiting: 'Carregar vídeo',
+  converting: 'Convertendo...',
+  uploading: 'Carregando...',
+  generating: 'Transcrevendo...',
+  success: 'Sucesso!',
+}
+
 export function VideoInputForm() {
-  const [videoFile, setVideoFile] = useState<File | null>(null)
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [conversionProgress, setConversionProgress] = useState(0)
+  const [status, setStatus] = useState<Status>('waiting')
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const { files } = e.target
@@ -16,12 +29,31 @@ export function VideoInputForm() {
   }
 
   async function handleUploadVideo(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (!videoFile) return
+    try {
+      e.preventDefault()
+      if (!videoFile) throw new Error('Missing video file')
 
-    const prompt = promptInputRef.current?.value || ''
-    const audioFile = await convertVideoToAudio(videoFile)
-    console.log(prompt, audioFile)
+      setStatus('converting')
+      const prompt = promptInputRef.current?.value || ''
+      const audioFile = await convertVideoToAudio(
+        videoFile,
+        setConversionProgress,
+      )
+
+      const data = new FormData()
+      data.append('file', audioFile)
+
+      setStatus('uploading')
+      const response = await api.post('/videos', data)
+      const videoId = response.data.video.id
+
+      setStatus('generating')
+      await api.post(`/videos/${videoId}/transcription`, { prompt })
+      setStatus('success')
+    } catch (error) {
+      setStatus('waiting')
+      console.error(error)
+    }
   }
 
   const previewUrl = useMemo(() => {
@@ -30,7 +62,7 @@ export function VideoInputForm() {
   }, [videoFile])
 
   return (
-    <form onSubmit={handleUploadVideo} className="space-y-6">
+    <form onSubmit={handleUploadVideo} className="space-y-5">
       <label
         htmlFor="video"
         className="relative flex flex-col items-center justify-center gap-2 rounded-sm border border-dashed text-sm text-muted-foreground aspect-video cursor-pointer hover:bg-primary/10 transition-colors"
@@ -64,13 +96,25 @@ export function VideoInputForm() {
           id="transcription_prompt"
           placeholder="Inclua palavras-chave mencionadas no vídeo separadas por vírgula (,)"
           className="h-20 leading-relaxed"
+          disabled={status !== 'waiting'}
           ref={promptInputRef}
         />
       </div>
 
-      <Button type="submit" className="w-full transition-colors">
-        Carregar vídeo
-        <Upload className="w-4 h-4 ml-2" />
+      <Button
+        type="submit"
+        disabled={status !== 'waiting'}
+        data-success={status === 'success'}
+        className="w-full transition-colors data-[success=true]:bg-emerald-700 data-[success=true]:opacity-100"
+      >
+        {statusMessages[status]}
+        {status === 'waiting' ? (
+          <Upload className="w-4 h-4 ml-2" />
+        ) : status === 'converting' ? (
+          <>{conversionProgress}%</>
+        ) : (
+          ''
+        )}
       </Button>
     </form>
   )

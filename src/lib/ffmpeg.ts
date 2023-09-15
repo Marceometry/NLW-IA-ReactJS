@@ -22,7 +22,10 @@ export async function loadFFmpeg() {
   return ffmpeg
 }
 
-export async function convertVideoToAudio(video: File) {
+export async function convertVideoToAudio(
+  video: File,
+  onProgress?: (progress: number) => void,
+) {
   console.log('Convert started.')
 
   const input = 'input.mp4'
@@ -32,11 +35,11 @@ export async function convertVideoToAudio(video: File) {
 
   await ffmpeg.writeFile(input, await fetchFile(video))
 
-  ffmpeg.on('log', console.error)
-  ffmpeg.on('progress', (value) => {
-    const progress = Math.round(value.progress * 100)
-    console.log('Convert progress: ' + progress + '%')
-  })
+  if (onProgress) {
+    ffmpeg.on('progress', ({ progress }) =>
+      onProgress(Math.round(progress * 100)),
+    )
+  }
 
   await ffmpeg.exec([
     '-i',
