@@ -1,16 +1,25 @@
 import { Textarea } from '@/components'
 
-export const Main = () => {
+type Props = {
+  template: string
+  setTemplate: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  completion: string
+}
+
+export const Main = ({ template, setTemplate, completion }: Props) => {
   return (
     <main className="flex flex-col flex-1 gap-4">
       <div className="grid grid-rows-2 gap-4 flex-1">
         <Textarea
           className="resize-none p-4 leading-relaxed"
           placeholder="Inclua o prompt para a IA..."
+          value={template}
+          onChange={setTemplate}
         />
         <Textarea
           className="resize-none p-4 leading-relaxed"
           placeholder="Resultado gerado pela IA..."
+          value={completion}
           readOnly
         />
       </div>

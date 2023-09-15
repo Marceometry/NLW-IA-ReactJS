@@ -23,12 +23,16 @@ type Props = {
   temperature: number
   setTemperature: (value: number) => void
   onPromptSelect: (template: string) => void
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  isLoading: boolean
 }
 
 export function PromptForm({
   onPromptSelect,
   temperature,
   setTemperature,
+  handleSubmit,
+  isLoading,
 }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
 
@@ -53,7 +57,7 @@ export function PromptForm({
   }
 
   return (
-    <form className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
         <Label>Prompt</Label>
         <Select onValueChange={handleSelectPrompt}>
@@ -104,7 +108,7 @@ export function PromptForm({
 
       <Separator />
 
-      <Button type="submit" className="w-full">
+      <Button disabled={isLoading} type="submit" className="w-full">
         Executar
         <Wand2 className="w-4 h-4 ml-2" />
       </Button>
